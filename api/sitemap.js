@@ -74,8 +74,11 @@ module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
     res.status(200).send(sitemap);
-  } catch (error) {
+      } catch (error) {
     console.error('KURAI sitemap error:', error);
-    res.status(500).send('Sitemap temporarily unavailable');
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.status(500).send(
+      'KURAI ERROR: ' + (error?.message || String(error))
+    );
   }
 };
