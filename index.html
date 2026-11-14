@@ -283,6 +283,11 @@ function renderRewards(){
 function showRewards(){previousSection='rewards';showSection('rewards');updateAchievements();renderRewards()}
 
 loadHome();
+
+const animeToOpen = new URLSearchParams(window.location.search).get('anime');
+if (animeToOpen) {
+  openAnime(animeToOpen);
+}
 </script>
 </body>
 </html>
