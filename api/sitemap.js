@@ -1,4 +1,3 @@
-
 const API = 'https://api.mikai.me/public/v1';
 const BASE = 'https://kurai-anime.vercel.app';
 
@@ -20,7 +19,12 @@ module.exports = async (req, res) => {
     for (let page = 1; page <= 10; page++) {
       const response = await fetch(
         `${API}/anime?page=${page}&limit=30`,
-        { headers: { Accept: 'application/json' } }
+        {
+  headers: {
+    Accept: 'application/json',
+    'User-Agent': 'KURAI-Anime/1.0 (+https://kurai-anime.vercel.app)'
+  }
+}
       );
 
       if (!response.ok) {
