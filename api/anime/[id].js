@@ -30,11 +30,26 @@ module.exports = async (req, res) => {
       : id;
 
     const response = await fetch(
-      API + '/anime/' + encodeURIComponent(ref),
-      { headers: { Accept: 'application/json' } }
-    );
+  API + '/anime/' + ref,
+  {
+    headers: {
+      Accept: 'application/json',
+      'User-Agent': 'KURAI-Anime/1.0 (+https://kurai-anime.vercel.app)'
+    }
+  }
+);
 
-    const json = await response.json();
+const contentType = response.headers.get('content-type') || '';
+const body = await response.text();
+
+if (!contentType.includes('application/json')) {
+  console.error('Mikai returned:', response.status, body.slice(0, 300));
+  return res.status(502).send(
+    'Mikai API returned non-JSON. HTTP ' + response.status
+  );
+}
+
+const json = JSON.parse(body);
 
     if (!response.ok || !json.ok || !json.result) {
       return res.status(404).send('Anime not found');
