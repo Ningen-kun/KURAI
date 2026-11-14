@@ -1,0 +1,9 @@
+
+{
+  "rewrites": [
+    {
+      "source": "/anime/:id",
+      "destination": "/api/anime/:id"
+    }
+  ]
+}
