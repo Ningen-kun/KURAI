@@ -118,7 +118,8 @@ ${image ? `<img src="${esc(image)}" alt="${esc(title)}">` : ''}
 </html>`);
 } catch (error) {
   console.error('KURAI anime SEO error:', error);
-  res.status(500).send(
+    res.status(500).send(
     'KURAI ERROR: ' + (error?.message || String(error))
   );
-}
+  }
+};
