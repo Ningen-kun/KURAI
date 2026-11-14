@@ -1,5 +1,5 @@
-// KURAI server-side proxy for the public AniLiberty API.
-const BASE = 'https://anilibria.top/api/v1';
+// KURAI server-side proxy for the official public AniLiberty API and its mirror.
+const BASES = ['https://api.anilibria.app/api/v1', 'https://anilibria.top/api/v1'];
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -18,12 +18,23 @@ export default async function handler(req, res) {
   } else {
     return res.status(400).json({ error: 'Invalid action or parameters' });
   }
-  try {
-    const upstream = await fetch(BASE + path, { headers: { Accept: 'application/json' } });
-    const body = await upstream.text();
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    return res.status(upstream.status).send(body);
-  } catch (error) {
-    return res.status(502).json({ error: 'AniLiberty API is temporarily unavailable' });
+  let lastStatus = 502;
+  for (const base of BASES) {
+    try {
+      const upstream = await fetch(base + path, {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(9000)
+      });
+      const body = await upstream.text();
+      lastStatus = upstream.status;
+      if (upstream.ok) {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        return res.status(200).send(body);
+      }
+    } catch (_) {
+      // Try the official mirror if the primary host is unavailable.
+    }
   }
+  return res.status(lastStatus >= 400 && lastStatus < 600 ? lastStatus : 502)
+    .json({ error: 'AniLibria API is temporarily unavailable. Please retry.' });
 }
