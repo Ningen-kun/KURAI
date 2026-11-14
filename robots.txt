@@ -1,0 +1,5 @@
+
+User-agent: *
+Allow: /
+
+Sitemap: https://kurai-anime.vercel.app/sitemap.xml
