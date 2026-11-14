@@ -4,6 +4,10 @@
     {
       "source": "/anime/:id",
       "destination": "/api/anime/:id"
+    },
+    {
+      "source": "/anime-sitemap.xml",
+      "destination": "/api/sitemap"
     }
   ]
 }
