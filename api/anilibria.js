@@ -8,6 +8,7 @@ export default async function handler(req, res) {
   const action = String(req.query.action || '');
   const query = String(req.query.query || '').trim().slice(0, 120);
   const id = String(req.query.id || '').trim();
+  const mal = String(req.query.mal || '').trim();
   let path;
   if (action === 'search' && query) {
     path = '/app/search/releases?query=' + encodeURIComponent(query);
@@ -15,6 +16,20 @@ export default async function handler(req, res) {
     path = '/anime/releases/' + encodeURIComponent(id);
   } else if (action === 'episode' && id && /^[a-f0-9-]{20,50}$/i.test(id)) {
     path = '/anime/releases/episodes/' + encodeURIComponent(id);
+  } else if (action === 'shikimori' && /^\d{1,10}$/.test(mal)) {
+    try {
+      const upstream = await fetch('https://shikimori.one/api/animes?ids=' + encodeURIComponent(mal) + '&limit=1', {
+        headers: { Accept: 'application/json', 'User-Agent': 'KURAI anime app (https://kurai-anime.vercel.app)' },
+        signal: AbortSignal.timeout(9000)
+      });
+      const body = await upstream.text();
+      if (!upstream.ok) return res.status(upstream.status).json({ error: 'Russian metadata provider unavailable' });
+      res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(200).send(body);
+    } catch (_) {
+      return res.status(502).json({ error: 'Russian metadata provider unavailable' });
+    }
   } else {
     return res.status(400).json({ error: 'Invalid action or parameters' });
   }
