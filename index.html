@@ -392,7 +392,7 @@ async function saveKuraiProfile(){
    if(!blob)throw new Error('Не вдалося підготувати файл банера.');
    const path=currentUser.id+'/banner-'+Date.now()+'.jpg';
    const {error:uploadError}=await kuraiAuth.storage.from('kurai-banners').upload(path,blob,{contentType:blob.type||'image/jpeg'});
-   if(uploadError){console.error('KURAI banner storage upload failed:',{message:uploadError.message,statusCode:uploadError.statusCode,error:uploadError.error,name:uploadError.name,path,contentType:blob.type,size:blob.size});throw new Error('Сховище банерів: '+(uploadError.message||uploadError.error||'помилка завантаження')+(uploadError.statusCode?' (HTTP '+uploadError.statusCode+')':''))}
+   if(uploadError){const details={message:uploadError.message||'',statusCode:uploadError.statusCode||'',error:uploadError.error||'',name:uploadError.name||'',details:uploadError.details||'',hint:uploadError.hint||'',path,contentType:blob.type||'',size:blob.size};console.error('KURAI banner storage upload failed:',details);const readable=[details.message,details.error,details.details,details.hint].filter(Boolean).join(' | ');throw new Error('Сховище банерів: '+(readable||'невідома помилка')+(details.statusCode?' (HTTP '+details.statusCode+')':''))}
    const {data:publicData}=kuraiAuth.storage.from('kurai-banners').getPublicUrl(path);
    banner=publicData.publicUrl+'?v='+Date.now();
    window.kuraiPendingBannerBlob=null;
