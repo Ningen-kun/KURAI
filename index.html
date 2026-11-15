@@ -384,11 +384,11 @@ async function saveKuraiProfile(){
  const nickname=$('profileNickname')?.value.trim()||'',bio=$('profileBio')?.value.trim()||'',avatar=window.kuraiCustomAvatarData||$('profileAvatar')?.value||'🌙',theme=$('profileTheme')?.value||'red',favorite_character=$('profileFavoriteCharacter')?.value.trim()||'',favorite_character_image=$('profileFavoriteCharacterImage')?.value.trim()||'';
  let banner=$('profileBannerPreview')?$('profileBannerPreview').dataset.banner:(readKuraiProfile().banner||'');
  if(nickname.length<2||nickname.length>24){alert('Нікнейм має містити від 2 до 24 символів.');return}
- if(bio.length>160){alert('Опис має бути не довшим за 160 символів.');return}if(favorite_character.length>48){alert('Ім’я персонажа має бути до 48 символів.');return}if(favorite_character_image&&!/^https?:\\/\\//i.test(favorite_character_image)){alert('Посилання на зображення персонажа має починатися з https:// або http://');return}
+ if(bio.length>160){alert('Опис має бути не довшим за 160 символів.');return}if(favorite_character.length>48){alert('Ім’я персонажа має бути до 48 символів.');return}if(favorite_character_image&&!/^https?:\/\//i.test(favorite_character_image)){alert('Посилання на зображення персонажа має починатися з https:// або http://');return}
  const previousProfile=currentProfile,btn=$('saveProfileBtn');if(btn){btn.disabled=true;btn.textContent='ЗБЕРІГАЄМО...'}
  try{
   if(window.kuraiPendingBannerBlob||banner.startsWith('data:image/')){
-   const blob=window.kuraiPendingBannerBlob||(await fetch(banner)).blob?await (await fetch(banner)).blob():null;
+   const blob=window.kuraiPendingBannerBlob||await (await fetch(banner)).blob();
    if(!blob)throw new Error('Не вдалося підготувати файл банера.');
    const path=currentUser.id+'/banner.jpg';
    const {error:uploadError}=await kuraiAuth.storage.from('kurai-banners').upload(path,blob,{upsert:true,contentType:'image/jpeg',cacheControl:'0'});
