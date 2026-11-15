@@ -391,8 +391,13 @@ async function saveKuraiProfile(){
    const blob=window.kuraiPendingBannerBlob||await (await fetch(banner)).blob();
    if(!blob)throw new Error('Не вдалося підготувати файл банера.');
    const path=currentUser.id+'/banner-'+Date.now()+'.jpg';
-   const {error:uploadError}=await kuraiAuth.storage.from('kurai-banners').upload(path,blob,{contentType:blob.type||'image/jpeg'});
-   if(uploadError){const details={message:uploadError.message||'',statusCode:uploadError.statusCode||'',error:uploadError.error||'',name:uploadError.name||'',details:uploadError.details||'',hint:uploadError.hint||'',path,contentType:blob.type||'',size:blob.size};console.error('KURAI banner storage upload failed:',details);const readable=[details.message,details.error,details.details,details.hint].filter(Boolean).join(' | ');throw new Error('Сховище банерів: '+(readable||'невідома помилка')+(details.statusCode?' (HTTP '+details.statusCode+')':''))}
+   const {data:sessionData,error:sessionError}=await kuraiAuth.auth.getSession();
+   if(sessionError)throw new Error('Не вдалося отримати сесію входу: '+sessionError.message);
+   const accessToken=sessionData?.session?.access_token;
+   if(!accessToken)throw new Error('Сесія входу відсутня. Вийди з акаунта та увійди знову.');
+   const uploadUrl=SUPABASE_URL+'/storage/v1/object/kurai-banners/'+path.split('/').map(encodeURIComponent).join('/');
+   const uploadResponse=await fetch(uploadUrl,{method:'POST',headers:{apikey:SUPABASE_ANON_KEY,Authorization:'Bearer '+accessToken,'Content-Type':blob.type||'image/jpeg','x-upsert':'false'},body:blob});
+   if(!uploadResponse.ok){let responseDetails='';try{responseDetails=await uploadResponse.text()}catch(e){}console.error('KURAI banner storage upload failed:',{status:uploadResponse.status,statusText:uploadResponse.statusText,response:responseDetails,path,contentType:blob.type||'',size:blob.size});throw new Error('HTTP '+uploadResponse.status+(responseDetails?' — '+responseDetails.slice(0,700):' — '+uploadResponse.statusText))}
    const {data:publicData}=kuraiAuth.storage.from('kurai-banners').getPublicUrl(path);
    banner=publicData.publicUrl+'?v='+Date.now();
    window.kuraiPendingBannerBlob=null;
