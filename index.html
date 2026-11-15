@@ -437,7 +437,7 @@ async function api(path){
  return json.result;
 }
 function esc(v=''){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function titleOf(a){const t=a?.titles||{};if(interfaceLanguage==='ru')return t.ru||t.russian||t.rus||t.english||t.original||t.ua||'Без названия';return t.ua||t.ukrainian||t.english||t.original||'Без назви'}
+function titleOf(a){const t=a?.titles||{};const english=[t.en,t.english,t.eng,t.ua,t.ukrainian,a?.title_english,a?.english,a?.name?.english,a?.name,a?.original,t.ru,t.russian,t.rus].find(v=>typeof v==='string'&&v.trim());return english||'Unknown title'}
 const russianMetadataCache=new Map();
 function cleanRussianDescription(value){return String(value||'').replace(/<[^>]*>/g,' ').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/\r\n/g,'\n').replace(/[ \t]+\n/g,'\n').trim()}
 async function loadRussianMetadata(anime){
