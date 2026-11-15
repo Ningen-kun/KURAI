@@ -1,5 +1,5 @@
 // KURAI server-side proxy for the official public AniLiberty API and its mirror.
-const BASES = ['https://api.anilibria.app/api/v1', 'https://anilibria.top/api/v1'];
+const BASES = ['https://aniliberty.top/api/v1', 'https://api.anilibria.app/api/v1', 'https://anilibria.top/api/v1'];
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
