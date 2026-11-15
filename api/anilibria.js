@@ -34,22 +34,44 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid action or parameters' });
   }
   let lastStatus = 502;
+  let successfulEmptySearch = false;
+  const searchResults = [];
   for (const base of BASES) {
     try {
       const upstream = await fetch(base + path, {
         headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(9000)
+        signal: AbortSignal.timeout(7000)
       });
       const body = await upstream.text();
       lastStatus = upstream.status;
-      if (upstream.ok) {
-        res.setHeader('Content-Type', 'application/json; charset=utf-8');
-        return res.status(200).send(body);
+      if (!upstream.ok) continue;
+      let parsed;
+      try { parsed = JSON.parse(body); } catch (_) { continue; }
+      if (action === 'search') {
+        const items = Array.isArray(parsed) ? parsed
+          : Array.isArray(parsed?.items) ? parsed.items
+          : Array.isArray(parsed?.data?.items) ? parsed.data.items
+          : Array.isArray(parsed?.data) ? parsed.data
+          : [];
+        if (items.length) searchResults.push(...items);
+        else successfulEmptySearch = true;
+        continue;
       }
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(200).json(parsed);
     } catch (_) {
-      // Try the official mirror if the primary host is unavailable.
+      // Try the official mirror if this host is unavailable.
     }
   }
+  if (action === 'search' && (searchResults.length || successfulEmptySearch)) {
+    const unique = new Map();
+    for (const item of searchResults) {
+      const key = String(item?.alias || item?.name?.alias || item?.id || JSON.stringify(item));
+      if (!unique.has(key)) unique.set(key, item);
+    }
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return res.status(200).json([...unique.values()]);
+  }
   return res.status(lastStatus >= 400 && lastStatus < 600 ? lastStatus : 502)
-    .json({ error: 'AniLibria API is temporarily unavailable. Please retry.' });
+    .json({ error: 'AniLiberty API is temporarily unavailable. Please retry.' });
 }
