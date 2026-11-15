@@ -390,9 +390,9 @@ async function saveKuraiProfile(){
   if(window.kuraiPendingBannerBlob||banner.startsWith('data:image/')){
    const blob=window.kuraiPendingBannerBlob||await (await fetch(banner)).blob();
    if(!blob)throw new Error('Не вдалося підготувати файл банера.');
-   const path=currentUser.id+'/banner.jpg';
-   const {error:uploadError}=await kuraiAuth.storage.from('kurai-banners').upload(path,blob,{upsert:true,contentType:'image/jpeg',cacheControl:'0'});
-   if(uploadError)throw uploadError;
+   const path=currentUser.id+'/banner-'+Date.now()+'.jpg';
+   const {error:uploadError}=await kuraiAuth.storage.from('kurai-banners').upload(path,blob,{contentType:blob.type||'image/jpeg'});
+   if(uploadError){console.error('KURAI banner storage upload failed:',{message:uploadError.message,statusCode:uploadError.statusCode,error:uploadError.error,name:uploadError.name,path,contentType:blob.type,size:blob.size});throw new Error('Сховище банерів: '+(uploadError.message||uploadError.error||'помилка завантаження')+(uploadError.statusCode?' (HTTP '+uploadError.statusCode+')':''))}
    const {data:publicData}=kuraiAuth.storage.from('kurai-banners').getPublicUrl(path);
    banner=publicData.publicUrl+'?v='+Date.now();
    window.kuraiPendingBannerBlob=null;
