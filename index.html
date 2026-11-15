@@ -334,7 +334,7 @@ try{if(window.supabase?.createClient)kuraiAuth=window.supabase.createClient(SUPA
 function readKuraiCloudData(){const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch(e){return fallback}};return {favorites:read('kurai_favorites',[]),progress:read('kurai_progress',{watched:{},completed:[],xp:0,unlocked:[]}),resume:read('kurai_resume',{})}}
 function applyKuraiCloudData(data){if(!data)return;cloudApplying=true;try{if(Array.isArray(data.favorites))localStorage.setItem('kurai_favorites',JSON.stringify(data.favorites));if(data.progress&&typeof data.progress==='object')localStorage.setItem('kurai_progress',JSON.stringify(data.progress));if(data.resume&&typeof data.resume==='object')localStorage.setItem('kurai_resume',JSON.stringify(data.resume));}finally{cloudApplying=false}if(!$('favorites').classList.contains('hidden'))showFavorites();if(!$('rewards').classList.contains('hidden'))renderRewards()}
 const DEFAULT_PROFILE={nickname:'',bio:'',avatar:'🌙',theme:'red',favorite_character:'',favorite_character_image:''};
-function readKuraiProfile(){const saved=currentProfile||currentUser?.user_metadata?.kurai_profile||{};return {...DEFAULT_PROFILE,...saved}}
+function readKuraiProfile(){let local={};try{local=JSON.parse(localStorage.getItem('kurai_profile')||'{}')}catch(e){}const saved=currentProfile||local||currentUser?.user_metadata?.kurai_profile||{};return {...DEFAULT_PROFILE,...saved}}
 function buildKuraiCloudRow(){const cloud=readKuraiCloudData(),progress=cloud.progress||{},profile=readKuraiProfile();return {id:currentUser.id,nickname:profile.nickname||'Користувач',bio:profile.bio||'',avatar:profile.avatar||'🌙',theme:profile.theme||'red',favorite_character:profile.favorite_character||'',favorite_character_image:profile.favorite_character_image||'',favorites:Array.isArray(cloud.favorites)?cloud.favorites:[],watched:progress.watched&&typeof progress.watched==='object'?progress.watched:{},progress,rewards:{xp:Number(progress.xp)||0,completed:Array.isArray(progress.completed)?progress.completed:[]},resume:cloud.resume&&typeof cloud.resume==='object'?cloud.resume:{},updated_at:new Date().toISOString()}}
 async function persistKuraiCloudData(){if(!kuraiAuth||!currentUser)throw new Error('Немає активного сеансу акаунта. Увійди повторно.');const {error}=await kuraiAuth.from('kurai_profiles').upsert(buildKuraiCloudRow(),{onConflict:'id'});if(error)throw error}
 async function loadKuraiAccountData(){
@@ -347,7 +347,8 @@ async function loadKuraiAccountData(){
   data=result.data;
  }catch(e){
   console.warn('KURAI profile table unavailable; loading account metadata backup:',e);
-  currentProfile={...DEFAULT_PROFILE,...legacyProfile};
+  let localProfile={};try{localProfile=JSON.parse(localStorage.getItem('kurai_profile')||'{}')}catch(e){}
+  currentProfile={...DEFAULT_PROFILE,...legacyProfile,...localProfile};
   if(currentUser.user_metadata?.kurai_data)applyKuraiCloudData(currentUser.user_metadata.kurai_data);
   window.kuraiCustomAvatarData=String(currentProfile.avatar||'').startsWith('data:image/')?currentProfile.avatar:'';
   updateAccountButton();
@@ -364,20 +365,18 @@ async function saveKuraiProfile(){
  const btn=$('saveProfileBtn');if(btn){btn.disabled=true;btn.textContent='ЗБЕРІГАЄМО...'}
  currentProfile=profile;
  try{
-  // Save the editable profile to Auth metadata first, so a temporary REST/API outage cannot lose it.
-  const {data,error}=await kuraiAuth.auth.updateUser({data:{kurai_profile:profile}});
-  if(error)throw error;
-  if(data?.user)currentUser=data.user;
-  let savedToDatabase=true;
-  try{await persistKuraiCloudData()}catch(dbError){savedToDatabase=false;console.warn('KURAI profile saved to Auth metadata; database backup is temporarily unavailable:',dbError)}
+  // Persist locally first; a Supabase network outage must not block saving the profile in this browser.
+  localStorage.setItem('kurai_profile',JSON.stringify(profile));
   window.kuraiCustomAvatarData=avatar.startsWith('data:image/')?avatar:'';
   updateAccountButton();renderRewards();
+  let cloudSaved=false;
+  try{await persistKuraiCloudData();cloudSaved=true}catch(dbError){console.warn('KURAI cloud profile sync failed; local profile retained:',dbError)}
   const status=$('profileSaveStatus');
-  if(status)status.textContent=savedToDatabase?'Профіль успішно збережено в хмарі KURAI ✓':'Профіль збережено в акаунті ✓ Синхронізація з базою тимчасово недоступна.';
+  if(status)status.textContent=cloudSaved?'Профіль збережено в KURAI ✓':'Профіль збережено на цьому пристрої ✓ Хмарна синхронізація тимчасово недоступна.';
  }catch(e){
   currentProfile=previousProfile;
-  console.error('KURAI profile save:',e);
-  const status=$('profileSaveStatus');if(status)status.textContent='Не вдалося зберегти: '+(e.message||'перевір з’єднання та увійди повторно');
+  console.error('KURAI local profile save:',e);
+  const status=$('profileSaveStatus');if(status)status.textContent='Не вдалося зберегти локально: '+(e.message||'перевір налаштування браузера');
   alert('Не вдалося зберегти профіль: '+(e.message||'невідома помилка'));
  }finally{const current=$('saveProfileBtn');if(current){current.disabled=false;current.textContent='ЗБЕРЕГТИ ПРОФІЛЬ'}}
 }
