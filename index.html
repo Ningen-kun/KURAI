@@ -381,25 +381,36 @@ async function loadKuraiAccountData(){
 function profileTheme(theme){return ({red:'linear-gradient(120deg,#401522,#17121e 65%,#242033)',purple:'linear-gradient(120deg,#28163e,#17121e 65%,#322044)',blue:'linear-gradient(120deg,#142d43,#111720 65%,#1c3547)',gold:'linear-gradient(120deg,#42331a,#171714 65%,#332b1b)'})[theme]||'linear-gradient(120deg,#401522,#17121e 65%,#242033)'}
 async function saveKuraiProfile(){
  if(!currentUser||!kuraiAuth){setAuthMessage('Спочатку увійди в акаунт, щоб створити профіль.',true);return}
- const nickname=$('profileNickname')?.value.trim()||'',bio=$('profileBio')?.value.trim()||'',avatar=window.kuraiCustomAvatarData||$('profileAvatar')?.value||'🌙',theme=$('profileTheme')?.value||'red',favorite_character=$('profileFavoriteCharacter')?.value.trim()||'',favorite_character_image=$('profileFavoriteCharacterImage')?.value.trim()||'',banner=$('profileBannerPreview')?$('profileBannerPreview').dataset.banner:(readKuraiProfile().banner||'');
+ const nickname=$('profileNickname')?.value.trim()||'',bio=$('profileBio')?.value.trim()||'',avatar=window.kuraiCustomAvatarData||$('profileAvatar')?.value||'🌙',theme=$('profileTheme')?.value||'red',favorite_character=$('profileFavoriteCharacter')?.value.trim()||'',favorite_character_image=$('profileFavoriteCharacterImage')?.value.trim()||'';
+ let banner=$('profileBannerPreview')?$('profileBannerPreview').dataset.banner:(readKuraiProfile().banner||'');
  if(nickname.length<2||nickname.length>24){alert('Нікнейм має містити від 2 до 24 символів.');return}
- if(bio.length>160){alert('Опис має бути не довшим за 160 символів.');return}if(favorite_character.length>48){alert('Ім’я персонажа має бути до 48 символів.');return}if(favorite_character_image&&!/^https?:\/\//i.test(favorite_character_image)){alert('Посилання на зображення персонажа має починатися з https:// або http://');return}
- const previousProfile=currentProfile,profile={nickname,bio,avatar,theme,favorite_character,favorite_character_image,banner,updated_at:new Date().toISOString()};
- const btn=$('saveProfileBtn');if(btn){btn.disabled=true;btn.textContent='ЗБЕРІГАЄМО...'}
- currentProfile=profile;
+ if(bio.length>160){alert('Опис має бути не довшим за 160 символів.');return}if(favorite_character.length>48){alert('Ім’я персонажа має бути до 48 символів.');return}if(favorite_character_image&&!/^https?:\\/\\//i.test(favorite_character_image)){alert('Посилання на зображення персонажа має починатися з https:// або http://');return}
+ const previousProfile=currentProfile,btn=$('saveProfileBtn');if(btn){btn.disabled=true;btn.textContent='ЗБЕРІГАЄМО...'}
  try{
-  // Persist locally first; a Supabase network outage must not block saving the profile in this browser.
+  if(window.kuraiPendingBannerBlob||banner.startsWith('data:image/')){
+   const blob=window.kuraiPendingBannerBlob||(await fetch(banner)).blob?await (await fetch(banner)).blob():null;
+   if(!blob)throw new Error('Не вдалося підготувати файл банера.');
+   const path=currentUser.id+'/banner.jpg';
+   const {error:uploadError}=await kuraiAuth.storage.from('kurai-banners').upload(path,blob,{upsert:true,contentType:'image/jpeg',cacheControl:'0'});
+   if(uploadError)throw uploadError;
+   const {data:publicData}=kuraiAuth.storage.from('kurai-banners').getPublicUrl(path);
+   banner=publicData.publicUrl+'?v='+Date.now();
+   window.kuraiPendingBannerBlob=null;
+   const preview=$('profileBannerPreview');if(preview){preview.dataset.banner=banner;preview.style.backgroundImage='linear-gradient(90deg,rgba(5,5,10,.2),rgba(5,5,10,.48)),url("'+banner+'")'}
+  }
+  const profile={nickname,bio,avatar,theme,favorite_character,favorite_character_image,banner,updated_at:new Date().toISOString()};
+  currentProfile=profile;
   localStorage.setItem('kurai_profile',JSON.stringify(profile));
   window.kuraiCustomAvatarData=avatar.startsWith('data:image/')?avatar:'';
   updateAccountButton();renderRewards();
   let cloudSaved=false;
   try{await persistKuraiCloudData();cloudSaved=true}catch(dbError){console.warn('KURAI cloud profile sync failed; local profile retained:',dbError)}
   const status=$('profileSaveStatus');
-  if(status)status.textContent=cloudSaved?'Профіль збережено в KURAI ✓':'Профіль збережено на цьому пристрої ✓ Хмарна синхронізація тимчасово недоступна.';
+  if(status)status.textContent=cloudSaved?'Профіль і банер збережено в KURAI ✓':'Профіль збережено на цьому пристрої ✓ Хмарна синхронізація тимчасово недоступна.';
  }catch(e){
   currentProfile=previousProfile;
-  console.error('KURAI local profile save:',e);
-  const status=$('profileSaveStatus');if(status)status.textContent='Не вдалося зберегти локально: '+(e.message||'перевір налаштування браузера');
+  console.error('KURAI profile/banner save:',e);
+  const status=$('profileSaveStatus');if(status)status.textContent='Не вдалося завантажити банер або зберегти профіль: '+(e.message||'невідома помилка');
   alert('Не вдалося зберегти профіль: '+(e.message||'невідома помилка'));
  }finally{const current=$('saveProfileBtn');if(current){current.disabled=false;current.textContent='ЗБЕРЕГТИ ПРОФІЛЬ'}}
 }
@@ -618,8 +629,8 @@ function renderRewards(){
  if(user){window.kuraiCustomAvatarData=String(profile.avatar||'').startsWith('data:image/')?profile.avatar:''}
 }
 function toggleProfileEditor(force){const editor=$('profileEditor');if(!editor)return;const open=typeof force==='boolean'?force:editor.classList.contains('hidden');editor.classList.toggle('hidden',!open);const button=$('editProfileToggle');if(button)button.textContent=open?'✕ ЗАКРИТИ РЕДАГУВАННЯ':'✎ РЕДАГУВАТИ ПРОФІЛЬ';if(open)editor.scrollIntoView({behavior:'smooth',block:'nearest'})}
-function handleBannerUpload(input){const file=input?.files?.[0];if(!file)return;if(!/^image\/(png|jpeg|webp)$/i.test(file.type)){alert('Обери PNG, JPG або WEBP.');input.value='';return}if(file.size>10*1024*1024){alert('Банер завеликий. Максимум — 10 МБ.');input.value='';return}const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{const w=1200,h=400,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');const scale=Math.max(w/img.width,h/img.height),sw=w/scale,sh=h/scale;ctx.drawImage(img,(img.width-sw)/2,(img.height-sh)/2,sw,sh,0,0,w,h);const data=canvas.toDataURL('image/jpeg',.76),preview=$('profileBannerPreview');preview.dataset.banner=data;preview.style.backgroundImage='linear-gradient(90deg,rgba(5,5,10,.2),rgba(5,5,10,.48)),url("'+data+'")';preview.style.backgroundSize='cover';preview.style.backgroundPosition='center';preview.innerHTML='';const status=$('profileSaveStatus');if(status)status.textContent='Банер готовий — збережи профіль.'};img.onerror=()=>alert('Не вдалося прочитати банер.');img.src=reader.result};reader.readAsDataURL(file)}
-function resetProfileBanner(){const preview=$('profileBannerPreview');if(!preview)return;preview.dataset.banner='';preview.style.backgroundImage='';preview.style.background='linear-gradient(120deg,#401522,#17121e 65%,#242033)';preview.innerHTML='<span>Твій банер KURAI</span>';const input=$('profileBannerFile');if(input)input.value=''}
+function handleBannerUpload(input){const file=input?.files?.[0];if(!file)return;if(!/^image\/(png|jpeg|webp)$/i.test(file.type)){alert('Обери PNG, JPG або WEBP.');input.value='';return}if(file.size>10*1024*1024){alert('Банер завеликий. Максимум — 10 МБ.');input.value='';return}const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{const w=1200,h=400,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');const scale=Math.max(w/img.width,h/img.height),sw=w/scale,sh=h/scale;ctx.drawImage(img,(img.width-sw)/2,(img.height-sh)/2,sw,sh,0,0,w,h);canvas.toBlob(blob=>{if(!blob){alert('Не вдалося обробити банер.');return}window.kuraiPendingBannerBlob=blob;const data=canvas.toDataURL('image/jpeg',.76),preview=$('profileBannerPreview');preview.dataset.banner=data;preview.style.backgroundImage='linear-gradient(90deg,rgba(5,5,10,.2),rgba(5,5,10,.48)),url("'+data+'")';preview.style.backgroundSize='cover';preview.style.backgroundPosition='center';preview.innerHTML='';const status=$('profileSaveStatus');if(status)status.textContent='Банер готовий — збережи профіль.'},'image/jpeg',.76)};img.onerror=()=>alert('Не вдалося прочитати банер.');img.src=reader.result};reader.readAsDataURL(file)}
+function resetProfileBanner(){const preview=$('profileBannerPreview');if(!preview)return;window.kuraiPendingBannerBlob=null;preview.dataset.banner='';preview.style.backgroundImage='';preview.style.background='linear-gradient(120deg,#401522,#17121e 65%,#242033)';preview.innerHTML='<span>Твій банер KURAI</span>';const input=$('profileBannerFile');if(input)input.value=''}
 
 function showRewards(){previousSection='rewards';showSection('rewards');updateAchievements();renderRewards()}
 
