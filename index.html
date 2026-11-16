@@ -506,7 +506,7 @@ async function loadCatalog(reset=false){
   grid.innerHTML=catalogItems.map(cardHTML).join('')||'<div class="empty">Нічого не знайдено.</div>';
   $('catalogCount').textContent='Знайдено: '+catalogItems.length;
  }catch(e){
-  if(token===catalogRequestToken){console.error(e);if(requestedPage===1)grid.innerHTML='<div class="empty">Помилка каталогу: '+esc(e.message)+'</div>';else console.error('Не вдалося завантажити наступну сторінку:',e)}
+  if(token===catalogRequestToken){console.error(e);page=requestedPage-1;if(requestedPage===1)grid.innerHTML='<div class="empty">Помилка каталогу: '+esc(e.message)+'</div>';else grid.insertAdjacentHTML('beforeend','<div class="empty">Не вдалося завантажити наступну сторінку. Натисни «Завантажити ще», щоб повторити.</div>')}
  }finally{
   if(token===catalogRequestToken){catalogLoading=false;grid.setAttribute('aria-busy','false');if(more){more.disabled=!catalogHasMore;more.hidden=!catalogHasMore;more.textContent='Завантажити ще'}}
  }
