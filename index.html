@@ -259,6 +259,7 @@ footer b{color:#ff647a;text-shadow:0 0 18px rgba(237,63,88,.22)}
 .player-box .player-controls select{min-width:155px;flex:1;background:linear-gradient(145deg,#1d1b26,#121119);border-color:rgba(255,255,255,.12);padding:12px 14px}.player-box .player-controls select:focus{outline:2px solid rgba(237,63,88,.35);border-color:#ed3f58}.video-wrap video{display:block;object-fit:contain}.source-row .source-btn{min-width:74px;font-weight:700}.player-box .notice{padding:11px 13px;border:1px solid rgba(255,255,255,.07);border-radius:9px;background:rgba(255,255,255,.025)}
 </style>
 <meta name="google-site-verification" content="V1AnF_49pgV1PvhyKbaZBvuk_nkvk2353BJ8yXZnGN8" />
+  <link rel="stylesheet" href="/kurai-v5.css">
 </head>
 <body>
 <header>
@@ -270,7 +271,7 @@ footer b{color:#ff647a;text-shadow:0 0 18px rgba(237,63,88,.22)}
   <button id="nav-favorites" onclick="showFavorites()" data-i18n="navFavorites">Обране</button>
   <button id="nav-rewards" onclick="showRewards()" data-i18n="navProfile">Профіль</button>
  </nav>
- <div class="header-right"><input id="searchInput" class="search" type="search" name="kurai-anime-query" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Знайти аніме..." data-i18n-placeholder="search" oninput="clearSearchAutofill(this)" onfocus="clearSearchAutofill(this)" onkeydown="if(event.key==='Enter')searchAnime()"><select id="interfaceLanguage" class="language-select" aria-label="Мова інтерфейсу" onchange="setInterfaceLanguage(this.value)"><option value="uk">🇺🇦 УКР</option><option value="ru">🇷🇺 РУС</option></select><button class="account-btn" id="accountButton" onclick="openAccount()">УВІЙТИ</button></div>
+ <div class="header-right"><input id="searchInput" class="search" type="search" name="kurai-anime-query" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Знайти аніме..." data-i18n-placeholder="search" oninput="clearSearchAutofill(this);scheduleCatalogSearch()" onfocus="clearSearchAutofill(this)" onkeydown="if(event.key==='Enter')searchAnime()"><select id="interfaceLanguage" class="language-select" aria-label="Мова інтерфейсу" onchange="setInterfaceLanguage(this.value)"><option value="uk">🇺🇦 УКР</option><option value="ru">🇷🇺 РУС</option></select><button class="account-btn" id="accountButton" onclick="openAccount()">УВІЙТИ</button></div>
 </header>
 <div class="auth-overlay" id="authOverlay" onclick="if(event.target===this)closeAccount()"><div class="auth-box"><div class="auth-head"><h2 id="authTitle">Твій акаунт KURAI</h2><button class="auth-close" onclick="closeAccount()" aria-label="Закрити">×</button></div><p class="auth-copy" id="authCopy">Увійди або створи акаунт, щоб зберігати улюблене та прогрес між пристроями.</p><div id="authForm"><div class="auth-field"><label for="authEmail">Електронна пошта</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="auth-field"><label for="authPassword">Пароль</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Мінімум 6 символів"></div><div class="auth-actions"><button class="primary" id="authSubmit" onclick="submitAuth()">УВІЙТИ</button><button class="secondary" id="authSwitch" onclick="toggleAuthMode()">Створити акаунт</button></div></div><div id="authAccount" class="hidden"><div class="auth-user"><strong id="authUserEmail"></strong><small>Акаунт KURAI · хмарне збереження</small><div class="auth-sync" id="authSyncStatus">Дані синхронізуються автоматично.</div></div><div class="auth-actions"><button class="primary" onclick="openMyProfile()">МІЙ ПРОФІЛЬ</button><button class="secondary" onclick="syncKuraiData(true)">Синхронізувати зараз</button><button class="secondary" onclick="logoutKurai()">Вийти з акаунта</button></div></div><div class="auth-message" id="authMessage" role="status"></div><p class="profile-note">Реєстрація використовує Supabase Auth. Не використовуй пароль від інших важливих акаунтів.</p></div></div>
 <main>
@@ -283,7 +284,7 @@ footer b{color:#ff647a;text-shadow:0 0 18px rgba(237,63,88,.22)}
  <section id="catalog" class="hidden">
   <div class="section-head"><h2>Каталог аніме</h2><span id="catalogCount"></span></div>
   <div class="player-controls"><select id="sortSelect" onchange="changeSort()"><option value="views">За популярністю</option><option value="mal_rating">За рейтингом</option><option value="updated">За оновленням</option><option value="year">За роком</option><option value="name">За назвою</option></select><select id="formatSelect" onchange="changeFormat()"><option value="">Усі формати</option><option value="tv">Серіали</option><option value="movie">Фільми</option><option value="ova">OVA</option><option value="ona">ONA</option></select></div>
-  <div id="catalogGrid" class="grid"></div><div style="text-align:center;margin:30px"><button class="secondary" onclick="loadMore()">Завантажити ще</button></div>
+  <div id="catalogGrid" class="grid" aria-live="polite" aria-busy="false"></div><div style="text-align:center;margin:30px"><button class="secondary" id="loadMoreButton" onclick="loadMore()">Завантажити ще</button></div>
  </section>
  <section id="randomizer" class="hidden">
   <div class="section-head"><h2>🎲 Рандомайзер аніме</h2><span>Довір вибір випадку</span></div>
@@ -344,6 +345,7 @@ function setInterfaceLanguage(lang){interfaceLanguage=lang==='ru'?'ru':'uk';loca
 function applyInterfaceLanguage(){const t=UI_TEXT[interfaceLanguage];document.documentElement.lang=interfaceLanguage;document.querySelectorAll('[data-i18n]').forEach(el=>{const key=el.dataset.i18n;if(t[key])el.textContent=t[key]});document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{const key=el.dataset.i18nPlaceholder;if(t[key])el.placeholder=t[key]});const lang=$('interfaceLanguage');if(lang)lang.value=interfaceLanguage;const account=$('accountButton');if(account&&!currentUser)account.textContent=t.login;const hero=document.querySelector('.hero p');if(hero)hero.textContent=t.heroTitle;const heroEyebrow=document.querySelector('.hero .eyebrow');if(heroEyebrow)heroEyebrow.textContent=t.heroEyebrow;const catalogTitle=document.querySelector('#catalog .section-head h2');if(catalogTitle)catalogTitle.textContent=t.catalog;const homeHeads=document.querySelectorAll('#home .section-head h2');if(homeHeads[0])homeHeads[0].textContent=t.popular;if(homeHeads[1])homeHeads[1].textContent=t.updates;if(homeHeads[2])homeHeads[2].textContent=t.latest;const audio=$('audioLanguageSelect');if(audio){audio.options[0].text=t.audioUk;audio.options[1].text=t.audioRu}translateKuraiTree(document.body)}
 
 let currentAnime=null,currentPlayer=null,selectedRelease=0,selectedEpisode=0,selectedSource=0,page=1,currentSearch='',currentSort='views',currentFormat='',catalogItems=[],previousSection='home';
+let catalogSearchTimer=null,catalogRequestToken=0,catalogLoading=false,catalogHasMore=true;
 let anilibertyMatches=[],anilibertyRelease=null,anilibertyEpisode=null,anilibertyHls=null;
 let embeddedPlayer=null,playerReady=false,lastPlayerTime=0,lastPlayerDuration=0,lastProgressWrite=0,currentResumeId='';
 const $=id=>document.getElementById(id);
@@ -486,8 +488,34 @@ async function loadHome(){
  jobs.filter(x=>x.status==='rejected').forEach(x=>console.error('Mikai block error:',x.reason));
 }
 function renderUpdates(items){if(!items?.length){$('updates').innerHTML='<div class="empty">Нових серій поки немає.</div>';return}$('updates').innerHTML=items.map(item=>{const a=item.anime||{},ref=animeRef(a),title=esc(titleOf(a)),poster=posterOf(a),team=(item.teams||[]).map(t=>t.name).join(' + ')||item.teamName||'Команда',kind=item.kind==='sub'?'Субтитри':'Озвучення';return `<div class="update-item" onclick="openAnime('${esc(ref)}')">${poster?`<img src="${esc(poster)}" alt="">`:'<div style="width:55px"></div>'}<div><strong>${title}</strong><small>${kind} · ${esc(team)} · Серія ${esc(item.episode??'—')}</small></div></div>`}).join('')}
-async function loadCatalog(reset=false){if(reset){page=1;catalogItems=[]}$('catalogGrid').innerHTML=page===1?'<div class="loading"><div class="spinner"></div>Завантажуємо каталог...</div>':$('catalogGrid').innerHTML;try{const params=new URLSearchParams({page:String(page),limit:'30',sort:currentSort,order:currentSort==='name'?'asc':'desc'});if(currentSearch)params.set('search',currentSearch);if(currentFormat)params.set('formats',currentFormat);const data=await api('/anime?'+params.toString());catalogItems=page===1?data:catalogItems.concat(data);$('catalogGrid').innerHTML=catalogItems.map(cardHTML).join('')||'<div class="empty">Нічого не знайдено.</div>';$('catalogCount').textContent='Сторінка '+page}catch(e){console.error(e);$('catalogGrid').innerHTML='<div class="empty">Помилка каталогу: '+esc(e.message)+'</div>'}}
-function loadMore(){page++;loadCatalog(false)}function changeSort(){currentSort=$('sortSelect').value;loadCatalog(true)}function changeFormat(){currentFormat=$('formatSelect').value;loadCatalog(true)}function searchAnime(){currentSearch=$('searchInput').value.trim();previousSection='catalog';showSection('catalog');loadCatalog(true)}
+async function loadCatalog(reset=false){
+ if(reset){page=1;catalogItems=[];catalogHasMore=true}
+ if(catalogLoading&&!reset)return;
+ const token=++catalogRequestToken,requestedPage=page,grid=$('catalogGrid'),more=$('loadMoreButton');
+ catalogLoading=true;grid.setAttribute('aria-busy','true');
+ if(more){more.disabled=true;more.textContent='Завантаження…'}
+ if(requestedPage===1)grid.innerHTML='<div class="loading"><div class="spinner"></div>Завантажуємо каталог...</div>';
+ try{
+  const params=new URLSearchParams({page:String(requestedPage),limit:'30',sort:currentSort,order:currentSort==='name'?'asc':'desc'});
+  if(currentSearch)params.set('search',currentSearch);if(currentFormat)params.set('formats',currentFormat);
+  const data=await api('/anime?'+params.toString());
+  if(token!==catalogRequestToken)return;
+  if(!Array.isArray(data))throw new Error('Каталог повернув некоректну відповідь.');
+  catalogItems=requestedPage===1?data:catalogItems.concat(data);
+  catalogHasMore=data.length>=30;
+  grid.innerHTML=catalogItems.map(cardHTML).join('')||'<div class="empty">Нічого не знайдено.</div>';
+  $('catalogCount').textContent='Знайдено: '+catalogItems.length;
+ }catch(e){
+  if(token===catalogRequestToken){console.error(e);page=requestedPage-1;if(requestedPage===1)grid.innerHTML='<div class="empty">Помилка каталогу: '+esc(e.message)+'</div>';else grid.insertAdjacentHTML('beforeend','<div class="empty">Не вдалося завантажити наступну сторінку. Натисни «Завантажити ще», щоб повторити.</div>')}
+ }finally{
+  if(token===catalogRequestToken){catalogLoading=false;grid.setAttribute('aria-busy','false');if(more){more.disabled=!catalogHasMore;more.hidden=!catalogHasMore;more.textContent='Завантажити ще'}}
+ }
+}
+function loadMore(){if(catalogLoading||!catalogHasMore)return;page++;loadCatalog(false)}
+function changeSort(){currentSort=$('sortSelect').value;loadCatalog(true)}
+function changeFormat(){currentFormat=$('formatSelect').value;loadCatalog(true)}
+function searchAnime(){if(catalogSearchTimer){clearTimeout(catalogSearchTimer);catalogSearchTimer=null}currentSearch=$('searchInput').value.trim();previousSection='catalog';showSection('catalog');loadCatalog(true)}
+function scheduleCatalogSearch(){if($('catalog').classList.contains('hidden'))return;if(catalogSearchTimer)clearTimeout(catalogSearchTimer);catalogSearchTimer=setTimeout(()=>searchAnime(),420)}
 async function pickRandomAnime(){
  const button=$('randomButton'),result=$('randomResult');button.disabled=true;button.textContent='⏳ ШУКАЄМО ТАЙТЛ...';result.innerHTML='<div class="loading"><div class="spinner"></div>Шукаємо щось цікаве...</div>';
  try{
