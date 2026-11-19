@@ -258,6 +258,138 @@ footer b{color:#ff647a;text-shadow:0 0 18px rgba(237,63,88,.22)}
 .profile-card-wide{grid-column:1/-1}.profile-cover-large{height:220px;background-position:center;background-size:cover}.profile-public-top{align-items:center;margin-top:8px}.profile-public-top .profile-name{margin:0 0 4px}.profile-showcase{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}.profile-feature-card{min-height:105px;display:flex;align-items:center;gap:12px;padding:14px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;overflow:hidden}.profile-feature-card>img{width:70px;height:78px;object-fit:cover;border-radius:8px}.profile-feature-card>div:last-child{min-width:0}.profile-feature-card small{display:block;color:#ff8292;font-size:9px;letter-spacing:1.2px;margin-bottom:7px}.profile-feature-card strong{display:block;font-size:13px;overflow-wrap:anywhere}.profile-feature-card span{display:block;color:var(--muted);font-size:11px;margin-top:5px}.profile-feature-placeholder{width:48px;height:48px;flex-shrink:0;border-radius:12px;background:rgba(237,63,88,.12);display:grid;place-items:center;font-size:23px}.profile-feature-empty{opacity:.8}.profile-editor-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.profile-banner-editor{display:grid;gap:10px}.profile-banner-editor input[type=file]{display:none}.profile-banner-preview{height:150px;border:1px solid var(--border);border-radius:11px;background:linear-gradient(120deg,#401522,#17121e 65%,#242033);display:grid;place-items:center;color:#aaa;font-size:13px;overflow:hidden;background-size:cover;background-position:center}.profile-editor{margin-top:16px}.profile-editor.hidden{display:none!important}@media(max-width:760px){.profile-showcase{grid-template-columns:1fr}.profile-cover-large{height:155px}.profile-public-top{align-items:flex-start;flex-direction:column}}
 /* Russian adaptation and native HLS player polish */
 .player-box .player-controls select{min-width:155px;flex:1;background:linear-gradient(145deg,#1d1b26,#121119);border-color:rgba(255,255,255,.12);padding:12px 14px}.player-box .player-controls select:focus{outline:2px solid rgba(237,63,88,.35);border-color:#ed3f58}.video-wrap video{display:block;object-fit:contain}.source-row .source-btn{min-width:74px;font-weight:700}.player-box .notice{padding:11px 13px;border:1px solid rgba(255,255,255,.07);border-radius:9px;background:rgba(255,255,255,.025)}
+
+/* KURAI mobile-first layout refinement */
+html,body{max-width:100%;overflow-x:clip}
+img,video,iframe{max-width:100%}
+button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
+button{touch-action:manipulation}
+@media(max-width:700px){
+  header{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"brand tools" "navigation navigation";
+    align-items:center;
+    gap:9px 10px;
+    min-height:0;
+    padding:11px 4%;
+  }
+  header>.logo{grid-area:brand;min-width:0}
+  header>nav{grid-area:navigation;order:initial;width:100%;min-width:0;margin:0}
+  header>.header-right{
+    grid-area:tools;
+    width:auto;
+    min-width:0;
+    display:flex;
+    flex-wrap:nowrap;
+    justify-content:flex-end;
+    gap:7px;
+  }
+  .header-right .search{width:clamp(105px,29vw,180px);min-width:0;flex:1 1 auto;padding:10px 11px;font-size:13px}
+  .header-right .language-select{max-width:76px;padding:9px 5px;font-size:11px}
+  .header-right .account-btn{padding:9px 10px;font-size:10px;letter-spacing:0}
+  nav{overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;overscroll-behavior-x:contain}
+  nav::-webkit-scrollbar{display:none}
+  nav button{flex:0 0 auto;min-height:38px}
+  main{width:100%;min-width:0;padding:17px 4% 48px}
+  .hero{min-height:300px;padding:23px 19px;background-position:60% center}
+  .hero>div{max-width:100%}
+  .hero h1{font-size:clamp(39px,11vw,50px);overflow-wrap:anywhere}
+  .hero p{font-size:13px;max-width:100%;line-height:1.7}
+  .hero .primary,.hero .secondary{min-height:43px}
+  .section-head{align-items:flex-start;flex-wrap:wrap;gap:7px;margin:31px 0 14px}
+  .section-head h2{font-size:19px}
+  .section-head span{font-size:11px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:17px 11px}
+  .anime-card{min-width:0}
+  .poster{width:100%;height:auto;aspect-ratio:2/2.9}
+  .anime-card h3{font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+  .anime-card small{font-size:10px}
+  .detail-top{grid-template-columns:minmax(92px,30%) minmax(0,1fr);gap:13px}
+  .detail-poster{width:100%;height:auto;aspect-ratio:2/2.9;object-fit:cover}
+  .detail-info{min-width:0}
+  .detail-info h1{font-size:clamp(19px,5vw,24px);overflow-wrap:anywhere}
+  .detail-info p{font-size:12px;line-height:1.6}
+  .meta{font-size:11px;line-height:1.5}
+  .actions{gap:8px;margin:13px 0}
+  .actions button,.watch-row button,.profile-actions button{min-height:40px}
+  .tag{font-size:10px}
+  .seasons-box,.player-box,.reward-panel{margin-top:18px;padding:14px}
+  .season-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .season-card{gap:8px;padding:8px}
+  .season-card img{width:40px;height:56px}
+  .season-card strong{font-size:11px;overflow-wrap:anywhere}
+  .player-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .player-controls select{width:100%;min-width:0;max-width:100%;font-size:12px;padding:10px 8px}
+  .source-row{gap:6px}
+  .source-btn{padding:9px 10px;min-height:38px;font-size:12px}
+  .video-wrap{width:100%;aspect-ratio:16/9}
+  .video-empty{min-height:150px;padding:15px;font-size:12px}
+  .random-panel{padding:16px}
+  .random-controls{gap:8px}
+  .random-controls>*{max-width:100%}
+  .random-result{grid-template-columns:minmax(90px,34%) minmax(0,1fr);gap:11px;padding:11px}
+  .random-result img,.random-placeholder{height:auto;aspect-ratio:2/2.8}
+  .random-result h2{font-size:17px;overflow-wrap:anywhere}
+  .random-result p{font-size:12px;line-height:1.5}
+  .profile-layout{grid-template-columns:minmax(0,1fr);gap:12px}
+  .profile-card-body{padding:0 15px 16px}
+  .profile-cover{height:100px}
+  .profile-cover-large{height:135px}
+  .profile-avatar{width:76px;height:76px;font-size:39px}
+  .profile-name{font-size:20px}
+  .profile-editor{padding:15px}
+  .profile-editor-grid{grid-template-columns:minmax(0,1fr);gap:0}
+  .profile-showcase{grid-template-columns:minmax(0,1fr);gap:9px}
+  .profile-feature-card{min-height:88px;padding:11px}
+  .profile-banner-preview{height:120px}
+  .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .stat{min-width:0;padding:11px 7px}
+  .stat strong{font-size:19px}
+  .stat span{font-size:10px}
+  .achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .achievement{min-width:0;gap:8px;padding:10px}
+  .achievement-icon{width:35px;height:35px;font-size:18px}
+  .achievement strong{font-size:11px}
+  .achievement small{font-size:9px}
+  .history-item{min-width:0;gap:9px;padding:9px}
+  .history-item>div:last-child{min-width:0;overflow-wrap:anywhere}
+  .auth-overlay{padding:10px;align-items:flex-end}
+  .auth-box{width:100%;max-height:90dvh;overflow-y:auto;padding:19px;border-radius:18px 18px 12px 12px}
+  .auth-actions>*{flex:1 1 auto;min-height:42px}
+  footer{padding:23px 5%;font-size:11px}
+}
+@media(max-width:430px){
+  header{grid-template-columns:minmax(0,1fr);grid-template-areas:"brand" "tools" "navigation";gap:9px}
+  header>.logo{justify-self:center;font-size:24px}
+  header>.header-right{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:7px}
+  .header-right .search{grid-column:1;grid-row:1;width:100%;min-width:0}
+  .header-right .language-select{grid-column:2;grid-row:1;width:72px}
+  .header-right .account-btn{grid-column:3;grid-row:1;white-space:nowrap}
+  header>nav{justify-content:flex-start}
+  .hero{min-height:275px;padding:20px 16px}
+  .hero h1{font-size:41px}
+  .detail-top{grid-template-columns:92px minmax(0,1fr);gap:11px}
+  .detail-info h1{font-size:19px}
+  .detail-info p{font-size:11px}
+  .random-result{grid-template-columns:92px minmax(0,1fr)}
+  .kurai-character-panel,.kurai-tempo-panel{grid-column:1/-1}
+  .kurai-character-panel{min-height:225px}
+  .kurai-tempo-panel{min-height:205px}
+  .kurai-fav-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .activity-grid{gap:3px}
+  .achievement-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:350px){
+  main{padding-left:12px;padding-right:12px}
+  .hero h1{font-size:36px}
+  .grid{gap:14px 8px}
+  .anime-card h3{font-size:11px}
+  .detail-top{grid-template-columns:78px minmax(0,1fr)}
+  .player-controls{grid-template-columns:minmax(0,1fr)}
+  .stat-grid{gap:6px}
+}
+
 </style>
 <meta name="google-site-verification" content="V1AnF_49pgV1PvhyKbaZBvuk_nkvk2353BJ8yXZnGN8" />
 </head>
